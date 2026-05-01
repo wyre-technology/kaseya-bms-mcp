@@ -1,0 +1,64 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.wyre-technology/kaseya-bms-mcp",
+  "title": "Kaseya BMS",
+  "description": "MCP server for Kaseya BMS PSA — tickets, accounts, time entries, contracts.",
+  "repository": {
+    "url": "https://github.com/wyre-technology/kaseya-bms-mcp",
+    "source": "github"
+  },
+  "version": "0.0.0",
+  "websiteUrl": "https://github.com/wyre-technology/kaseya-bms-mcp",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/wyre-technology/kaseya-bms-mcp:0.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "KASEYA_BMS_TENANT_SUBDOMAIN",
+          "description": "Tenant subdomain (e.g. 'yourcompany' for yourcompany.bms.kaseya.com)",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "KASEYA_BMS_API_TOKEN",
+          "description": "BMS API token (omit if using Kaseya One token)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "KASEYA_BMS_K1_TOKEN",
+          "description": "Kaseya One SSO token (alternative to API token)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "MCP_TRANSPORT",
+          "description": "Transport mode for the server. Set to 'stdio' for local CLI use; the image defaults to 'http' for gateway hosting.",
+          "isRequired": false,
+          "default": "stdio",
+          "format": "string"
+        },
+        {
+          "name": "AUTH_MODE",
+          "description": "Credential source: 'env' reads vars locally, 'gateway' expects header injection from the WYRE MCP Gateway.",
+          "isRequired": false,
+          "default": "env",
+          "format": "string"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Log verbosity: debug, info, warn, error",
+          "isRequired": false,
+          "default": "info",
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

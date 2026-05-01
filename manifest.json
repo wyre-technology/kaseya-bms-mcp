@@ -1,0 +1,34 @@
+{
+  "manifest_version": "0.3",
+  "name": "kaseya-bms-mcp",
+  "display_name": "Kaseya BMS MCP Server",
+  "version": "0.0.0",
+  "description": "MCP server for Kaseya BMS PSA - manage tickets, accounts, contacts, time entries, contracts, and KB through AI assistants",
+  "long_description": "Provides AI assistants with structured access to your Kaseya BMS PSA tenant. List and create tickets, append notes, list time entries, browse accounts, contacts, contracts, the service catalog, and search the knowledge base via the Model Context Protocol.",
+  "author": { "name": "Wyre Technology", "url": "https://github.com/wyre-technology" },
+  "repository": { "type": "git", "url": "https://github.com/wyre-technology/kaseya-bms-mcp" },
+  "homepage": "https://github.com/wyre-technology/kaseya-bms-mcp",
+  "license": "Apache-2.0",
+  "keywords": ["kaseya", "bms", "psa", "msp", "tickets", "time-entries"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "KASEYA_BMS_TENANT_SUBDOMAIN": "${user_config.kaseya_bms_tenant_subdomain}",
+        "KASEYA_BMS_API_TOKEN": "${user_config.kaseya_bms_api_token}",
+        "KASEYA_BMS_K1_TOKEN": "${user_config.kaseya_bms_k1_token}",
+        "MCP_TRANSPORT": "stdio"
+      }
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "kaseya_bms_tenant_subdomain": { "type": "string", "title": "Kaseya BMS Tenant Subdomain", "description": "Tenant subdomain (e.g. 'yourcompany')", "sensitive": false, "required": true },
+    "kaseya_bms_api_token": { "type": "string", "title": "Kaseya BMS API Token", "description": "BMS API token (omit if using Kaseya One token)", "sensitive": true, "required": false },
+    "kaseya_bms_k1_token": { "type": "string", "title": "Kaseya One SSO Token", "description": "Kaseya One SSO token (alternative to API token)", "sensitive": true, "required": false }
+  },
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=18.0.0" }, "claude_desktop": ">=0.10.0" }
+}
