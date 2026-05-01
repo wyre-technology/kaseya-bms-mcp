@@ -314,21 +314,30 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
         }
 
         case "kaseya_bms_create_ticket": {
-          const payload = args as {
+          // BMS API expects PascalCase fields. Tool input stays camelCase for
+          // ergonomics; we map at the boundary.
+          const input = args as {
             subject: string;
-            description: string;
+            description?: string;
             accountId?: string;
             contactId?: string;
             priority?: string;
             status?: string;
           };
           const ok = await elicitConfirmation(
-            `This will create a new BMS ticket: "${payload.subject}". Proceed?`
+            `This will create a new BMS ticket: "${input.subject}". Proceed?`
           );
           if (ok !== true) {
             return { content: [{ type: "text", text: "Ticket creation cancelled by user." }] };
           }
-          const created = await c.tickets.create(payload);
+          const created = await c.tickets.create({
+            Subject: input.subject,
+            Description: input.description,
+            AccountId: input.accountId,
+            ContactId: input.contactId,
+            Priority: input.priority,
+            Status: input.status,
+          });
           return { content: [{ type: "text", text: JSON.stringify(created ?? {}, null, 2) }] };
         }
 
@@ -344,7 +353,7 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
           if (ok !== true) {
             return { content: [{ type: "text", text: "Note add cancelled by user." }] };
           }
-          const result = await c.tickets.addNote(ticketId, { body, isInternal });
+          const result = await c.tickets.addNote(ticketId, { Note: body, IsInternal: isInternal });
           return { content: [{ type: "text", text: JSON.stringify(result ?? { ok: true }, null, 2) }] };
         }
 
@@ -385,6 +394,8 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
         }
 
         case "kaseya_bms_search_knowledge_base": {
+          // BMS KB endpoint accepts only OData params. Free-text "search" is
+          // expressed as a $filter on Title (case-insensitive contains).
           const params = (args ?? {}) as { query?: string; top?: number };
           let query = params.query;
           if (!query) {
@@ -392,7 +403,10 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
             query = q || undefined;
           }
           const top = Math.min(params.top ?? 50, RESULT_HARD_CAP);
-          const results = await c.knowledgeBase.list({ query, top });
+          const filter = query
+            ? `contains(tolower(Title), '${query.toLowerCase().replace(/'/g, "''")}')`
+            : undefined;
+          const results = await c.knowledgeBase.list({ top, filter });
           return { content: [{ type: "text", text: JSON.stringify(results ?? [], null, 2) }] };
         }
 
