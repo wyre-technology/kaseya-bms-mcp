@@ -25,22 +25,44 @@ import { elicitConfirmation, elicitSelection, elicitText } from "./utils/elicita
 // Credentials
 // ---------------------------------------------------------------------------
 
-interface KaseyaBmsCredentials {
+export interface KaseyaBmsCredentials {
   tenantSubdomain: string;
   apiToken?: string;
   kaseyaOneToken?: string;
 }
 
-function getCredentials(): KaseyaBmsCredentials | null {
+// An unresolved MCPB/DXT manifest placeholder, e.g. "${user_config.kaseya_bms_k1_token}".
+// Desktop hosts inject the config template verbatim when its optional user_config
+// field is left blank, so the literal string arrives in the env var / header.
+const CONFIG_PLACEHOLDER = /^\$\{.*\}$/;
+
+/**
+ * Strip empty/whitespace and unresolved MCPB "${user_config.X}" placeholders
+ * (issue #73 pattern), returning `undefined` so the auth layer treats the value
+ * as absent rather than a real credential.
+ *
+ * Root cause: both KASEYA_BMS_API_TOKEN and KASEYA_BMS_K1_TOKEN are optional and
+ * map to ${user_config.*} in manifest.json. When the Kaseya One token field is
+ * left blank, the host injects the literal "${user_config.kaseya_bms_k1_token}".
+ * Because createClient prefers kaseyaOneToken over apiToken, that placeholder was
+ * sent as the SSO token and a valid API token was ignored → auth failure.
+ */
+export function cleanCredential(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed || CONFIG_PLACEHOLDER.test(trimmed)) return undefined;
+  return trimmed;
+}
+
+export function getCredentials(): KaseyaBmsCredentials | null {
   const tenantSubdomain = process.env.KASEYA_BMS_TENANT_SUBDOMAIN;
   if (!tenantSubdomain) return null;
-  const apiToken = process.env.KASEYA_BMS_API_TOKEN;
-  const kaseyaOneToken = process.env.KASEYA_BMS_K1_TOKEN;
+  const apiToken = cleanCredential(process.env.KASEYA_BMS_API_TOKEN);
+  const kaseyaOneToken = cleanCredential(process.env.KASEYA_BMS_K1_TOKEN);
   if (!apiToken && !kaseyaOneToken) return null;
   return { tenantSubdomain, apiToken, kaseyaOneToken };
 }
 
-function createClient(creds: KaseyaBmsCredentials): KaseyaBmsClient {
+export function createClient(creds: KaseyaBmsCredentials): KaseyaBmsClient {
   const opts: Record<string, unknown> = { tenantSubdomain: creds.tenantSubdomain };
   if (creds.kaseyaOneToken) {
     opts.kaseyaOneToken = creds.kaseyaOneToken;
@@ -487,8 +509,10 @@ async function startHttpTransport(): Promise<void> {
       if (isGatewayMode) {
         const headers = req.headers as Record<string, string | string[] | undefined>;
         const tenantSubdomain = headers["x-kaseya-bms-tenant-subdomain"] as string | undefined;
-        const apiToken = headers["x-kaseya-bms-api-token"] as string | undefined;
-        const kaseyaOneToken = headers["x-kaseya-bms-k1-token"] as string | undefined;
+        // Strip unresolved MCPB placeholders here too, so a blank optional field
+        // forwarded as "${user_config.X}" never overrides a real token (issue #73).
+        const apiToken = cleanCredential(headers["x-kaseya-bms-api-token"] as string | undefined);
+        const kaseyaOneToken = cleanCredential(headers["x-kaseya-bms-k1-token"] as string | undefined);
 
         if (!tenantSubdomain || (!apiToken && !kaseyaOneToken)) {
           res.writeHead(401, { "Content-Type": "application/json" });
@@ -594,4 +618,7 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(console.error);
+// Only bootstrap the server when run as a process, not when imported for tests.
+if (process.env.NODE_ENV !== "test") {
+  main().catch(console.error);
+}
