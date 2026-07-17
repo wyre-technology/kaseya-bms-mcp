@@ -25,6 +25,18 @@ catalog, and the knowledge base to AI assistants.
 When the user omits required filters or runs a destructive action, the server
 uses MCP elicitation to prompt for choices or confirm.
 
+## Interactive Ticket Card (MCP Apps)
+
+`kaseya_bms_get_ticket` renders as an interactive card in MCP Apps hosts
+(Claude Desktop/web) with an in-card "Add note" round-trip via
+`kaseya_bms_add_ticket_note` (always posted internal-only); plain-JSON
+behavior is unchanged in other hosts. The card is neutral by default and
+brandable via `window.__BRAND__` injection or `MCP_BRAND_*` env vars
+(`MCP_BRAND_NAME`, `MCP_BRAND_LOGO_URL`, `MCP_BRAND_PRIMARY_COLOR`,
+`MCP_BRAND_ACCENT_COLOR`, `MCP_BRAND_BG`, `MCP_BRAND_TEXT`) — no rebuild
+needed. After editing `ui/`, regenerate the embedded bundle with
+`npm run build:ui`.
+
 ## Configuration
 
 ### Environment-variable mode (default)
