@@ -15,11 +15,22 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
   CallToolRequestSchema,
+  ListResourcesRequestSchema,
   ListToolsRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { KaseyaBmsClient } from "@wyre-technology/node-kaseya-bms";
 import { setServerRef } from "./utils/server-ref.js";
 import { elicitConfirmation, elicitSelection, elicitText } from "./utils/elicitation.js";
+import {
+  TICKET_CARD_META,
+  TICKET_CARD_RESOURCE_URI,
+  MCP_APP_RESOURCE_MIME,
+  applyBrandInjection,
+  resolveBrandFromEnv,
+  buildTicketCard,
+} from "./card.builder.js";
+import { TICKET_CARD_HTML } from "./generated/ticket-card-html.js";
 
 // ---------------------------------------------------------------------------
 // Credentials
@@ -76,7 +87,7 @@ export function createClient(creds: KaseyaBmsCredentials): KaseyaBmsClient {
 // Server factory — fresh server per request (stateless HTTP mode)
 // ---------------------------------------------------------------------------
 
-function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
+export function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
   const server = new Server(
     {
       name: "kaseya-bms-mcp",
@@ -85,6 +96,7 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
     {
       capabilities: {
         tools: {},
+        resources: {},
       },
     }
   );
@@ -110,6 +122,7 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
         {
           name: "kaseya_bms_get_ticket",
           description: "Get details for a single ticket by ticket id.",
+          _meta: TICKET_CARD_META,
           inputSchema: {
             type: "object",
             properties: {
@@ -139,6 +152,7 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
           name: "kaseya_bms_add_ticket_note",
           description:
             "Append a note to an existing ticket. DESTRUCTIVE: requires user confirmation before submission.",
+          _meta: TICKET_CARD_META,
           inputSchema: {
             type: "object",
             properties: {
@@ -220,6 +234,44 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
               top: { type: "number", description: "Max records (default 50)", default: 50 },
             },
           },
+        },
+      ],
+    };
+  });
+
+  // -------------------------------------------------------------------------
+  // Resources — MCP Apps (SEP-1865) ticket-card UI
+  // -------------------------------------------------------------------------
+
+  // The ui:// ticket card is static HTML embedded at build time
+  // (src/generated/ticket-card-html.ts), so it serves identically from stdio
+  // and Node HTTP without touching the filesystem.
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return {
+      resources: [
+        {
+          uri: TICKET_CARD_RESOURCE_URI,
+          name: "Kaseya BMS Ticket Card",
+          description: "Interactive MCP Apps card rendering a Kaseya BMS ticket",
+          mimeType: MCP_APP_RESOURCE_MIME,
+        },
+      ],
+    };
+  });
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const { uri } = request.params;
+    if (uri !== TICKET_CARD_RESOURCE_URI) {
+      throw new Error(`Unknown resource: ${uri}`);
+    }
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: MCP_APP_RESOURCE_MIME,
+          // Neutral by default; MCP_BRAND_* env vars inject a per-operator
+          // brand at serve time (no vars = HTML served unchanged).
+          text: applyBrandInjection(TICKET_CARD_HTML, resolveBrandFromEnv()),
         },
       ],
     };
@@ -332,7 +384,15 @@ function createMcpServer(credentialOverrides?: KaseyaBmsCredentials): Server {
         case "kaseya_bms_get_ticket": {
           const { ticketId } = args as { ticketId: string };
           const ticket = await c.tickets.get(ticketId);
-          return { content: [{ type: "text", text: JSON.stringify(ticket ?? {}, null, 2) }] };
+          // MCP Apps: attach the normalized card payload the ui:// ticket
+          // card renders from. Best-effort — a null card just means no UI
+          // surface; the model-visible JSON is otherwise unchanged.
+          const card = await buildTicketCard(
+            ticket as Record<string, unknown> | null | undefined,
+            client
+          );
+          const payload = card ? { ...ticket, _card: card } : ticket;
+          return { content: [{ type: "text", text: JSON.stringify(payload ?? {}, null, 2) }] };
         }
 
         case "kaseya_bms_create_ticket": {
