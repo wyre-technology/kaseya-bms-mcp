@@ -5,9 +5,9 @@
   "version": "0.0.0",
   "description": "MCP server for Kaseya BMS PSA - manage tickets, accounts, contacts, time entries, contracts, and KB through AI assistants",
   "long_description": "Provides AI assistants with structured access to your Kaseya BMS PSA tenant. List and create tickets, append notes, list time entries, browse accounts, contacts, contracts, the service catalog, and search the knowledge base via the Model Context Protocol.",
-  "author": { "name": "Wyre Technology", "url": "https://github.com/wyre-technology" },
-  "repository": { "type": "git", "url": "https://github.com/wyre-technology/kaseya-bms-mcp" },
-  "homepage": "https://github.com/wyre-technology/kaseya-bms-mcp",
+  "author": { "name": "Wyre Technology", "url": "https://github.com/WYRE-AI" },
+  "repository": { "type": "git", "url": "https://github.com/WYRE-AI/kaseya-bms-mcp" },
+  "homepage": "https://github.com/WYRE-AI/kaseya-bms-mcp",
   "license": "Apache-2.0",
   "keywords": ["kaseya", "bms", "psa", "msp", "tickets", "time-entries"],
   "server": {
