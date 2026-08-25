@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.wyre-technology/kaseya-bms-mcp",
+  "name": "io.github.WYRE-AI/kaseya-bms-mcp",
   "title": "Kaseya BMS",
   "description": "MCP server for Kaseya BMS PSA — tickets, accounts, time entries, contracts.",
   "repository": {
-    "url": "https://github.com/wyre-technology/kaseya-bms-mcp",
+    "url": "https://github.com/WYRE-AI/kaseya-bms-mcp",
     "source": "github"
   },
   "version": "0.0.0",
-  "websiteUrl": "https://github.com/wyre-technology/kaseya-bms-mcp",
+  "websiteUrl": "https://github.com/WYRE-AI/kaseya-bms-mcp",
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/wyre-technology/kaseya-bms-mcp:0.0.0",
+      "identifier": "ghcr.io/wyre-ai/kaseya-bms-mcp:0.0.0",
       "transport": {
         "type": "stdio"
       },

@@ -1,5 +1,5 @@
 {
-  "name": "@wyre-technology/kaseya-bms-mcp",
+  "name": "@wyre-ai/kaseya-bms-mcp",
   "version": "0.0.0",
   "description": "Kaseya BMS PSA MCP server for Claude — tickets, accounts, time entries, contracts",
   "type": "module",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wyre-technology/kaseya-bms-mcp.git"
+    "url": "git+https://github.com/WYRE-AI/kaseya-bms-mcp.git"
   },
   "keywords": [
     "mcp",
@@ -38,9 +38,9 @@
   "author": "Wyre Technology",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/wyre-technology/kaseya-bms-mcp/issues"
+    "url": "https://github.com/WYRE-AI/kaseya-bms-mcp/issues"
   },
-  "homepage": "https://github.com/wyre-technology/kaseya-bms-mcp#readme",
+  "homepage": "https://github.com/WYRE-AI/kaseya-bms-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@wyre-technology/node-kaseya-bms": "^1.0.1"
